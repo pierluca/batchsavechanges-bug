@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
@@ -12,49 +12,44 @@ namespace BugRepro
         static void Main(string[] args)
         {
             Console.WriteLine("Initializing database");
+
+            // The initialization creates the same entities as UpdateEntity, below
             Database.SetInitializer(new MyContextInitializer());
 
-            // Using SaveChanges
+            Console.WriteLine("Try SaveChanges - WORKING");
             using (var ctx = new MyEntityContext())
             {
-                
                 UpdateEntity(ctx);
 
-                Console.WriteLine("Try SaveChanges");
-                ctx.Database.Log = Console.Write;
                 var result = ctx.SaveChanges();
 
                 Console.WriteLine($"SavesChanges OK : {result}");
             }
 
-
             AssertData();
-            Console.WriteLine();
-            // Using BulkSaveChanges
+
+            Console.WriteLine("Using BulkSaveChanges - WORKING");
             using (var ctx = new MyEntityContext())
             {
-
                 UpdateEntity(ctx);
 
-                Console.WriteLine("Try BulkSaveChanges");
-                
                 ctx.BulkSaveChanges();
 
                 Console.WriteLine($"BulkSaveChanges OK");
             }
 
             AssertData();
-            Console.WriteLine();
-            // Using BatchSaveChanges
+
+            Console.WriteLine("Using BatchSaveChanges - BROKEN");
             try
             {
                 using (var ctx = new MyEntityContext())
                 {
-
                     UpdateEntity(ctx);
 
-                    Console.WriteLine("Try BatchSaveChanges");
                     ctx.Database.Log = Console.Write;
+
+                    // This fails
                     var result = ctx.BatchSaveChanges();
 
                     Console.WriteLine($"BatchSavesChanges OK : {result}");
@@ -73,14 +68,19 @@ namespace BugRepro
 
         private static void UpdateEntity(MyEntityContext ctx)
         {
+            // Doing this would fix: ctx.MyEntities.First(entity => entity.Id == 1);
             var existingEntity = ctx.MyEntities.Include(entity => entity.MySubEntities).First(entity => entity.Id == 1);
             ctx.MyEntities.Remove(existingEntity);
+
+            // Doing this would fix too: ctx.BatchSaveChanges();
+
             ctx.MyEntities.Add(new MyEntity()
             {
                 Id = 1,
                 Name = nameof(MyEntity),
                 MySubEntities = new List<MySubEntity>()
                 {
+                    // Adding sub entities is not necessary to trigger the problem
                     new MySubEntity()
                     {
                         Id = 1
