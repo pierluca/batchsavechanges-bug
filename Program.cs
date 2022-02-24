@@ -17,40 +17,44 @@ namespace BugRepro
             // Using SaveChanges
             using (var ctx = new MyEntityContext())
             {
+                
                 UpdateEntity(ctx);
 
                 Console.WriteLine("Try SaveChanges");
-
+                ctx.Database.Log = Console.Write;
                 var result = ctx.SaveChanges();
 
                 Console.WriteLine($"SavesChanges OK : {result}");
             }
 
-            AssertData();
 
+            AssertData();
+            Console.WriteLine();
             // Using BulkSaveChanges
             using (var ctx = new MyEntityContext())
             {
+
                 UpdateEntity(ctx);
 
                 Console.WriteLine("Try BulkSaveChanges");
-
+                
                 ctx.BulkSaveChanges();
 
                 Console.WriteLine($"BulkSaveChanges OK");
             }
 
             AssertData();
-
+            Console.WriteLine();
             // Using BatchSaveChanges
             try
             {
                 using (var ctx = new MyEntityContext())
                 {
+
                     UpdateEntity(ctx);
 
                     Console.WriteLine("Try BatchSaveChanges");
-
+                    ctx.Database.Log = Console.Write;
                     var result = ctx.BatchSaveChanges();
 
                     Console.WriteLine($"BatchSavesChanges OK : {result}");
